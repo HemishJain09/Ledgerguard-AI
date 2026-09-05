@@ -61,7 +61,7 @@ def batch_normalize_and_save(mapped_df: pl.DataFrame, file_hash: str):
     """
     rows = mapped_df.to_dicts()
     db = SessionLocal()
-    target_currency = RECONCILIATION_CONFIG.get("target_currency", "INR")
+    target_currency = RECONCILIATION_CONFIG.get("target_currency", "USD")
     
     try:
         for row in rows:

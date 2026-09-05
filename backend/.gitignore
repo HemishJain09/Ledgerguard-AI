@@ -8,3 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment secrets - NEVER commit this
+.env
+.env.local
+
+# SQLite local database
+ledger.db
+
+# Pytest cache
+.pytest_cache/

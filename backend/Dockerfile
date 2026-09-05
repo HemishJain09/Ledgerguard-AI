@@ -1,6 +1,6 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
-# Install system dependencies (needed for pdfplumber/psycopg2)
+# Install system dependencies (needed for pdfplumber & psycopg2)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
@@ -9,20 +9,21 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install uv
+# Install uv package manager
 RUN pip install uv
 
-# Copy project files
-COPY pyproject.toml .python-version ./
+# Copy project definition files
+COPY pyproject.toml uv.lock .python-version ./
 
-# Install dependencies using uv
-RUN uv pip install --system -r pyproject.toml
+# Install all dependencies from lock file for reproducible builds
+RUN uv sync --frozen
 
-# Copy source code
+# Copy source code and config
 COPY src/ ./src/
+COPY server.py config.yaml ./
 
-# Expose port (if running a web server later)
+# Expose FastAPI port
 EXPOSE 8000
 
-# Entrypoint (placeholder for now)
-CMD ["python", "-m", "backend"]
+# Start the FastAPI server
+CMD ["uv", "run", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -8,7 +8,7 @@ class ReconJobPolicy(BaseModel):
     """
     Overarching ruleset for a reconciliation batch.
     """
-    target_currency: str = "INR"
+    target_currency: str = "USD"
     max_settlement_lag_days: int = 3
     fuzzy_match_threshold: int = 75
     max_fee_pct: float = 0.03

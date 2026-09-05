@@ -15,7 +15,7 @@ class CanonicalTransaction(BaseModel):
     fee_amount: str = Field(description="Any processing fee deducted (default '0.00' if none)")
     tax_amount: str = Field(description="Any tax on the fee (default '0.00' if none)")
     net_amount: str = Field(description="The final net amount settled or credited/debited")
-    currency: str = Field(description="Currency code for the transaction (default 'INR' if none)")
+    currency: str = Field(description="Currency code for the transaction (default 'USD' if none)")
     description: str = Field(description="Additional details or counterparty name")
     type: str = Field(description="Type of record: e.g., 'ERP_SALE', 'PG_SETTLEMENT', 'BANK_CREDIT'")
 

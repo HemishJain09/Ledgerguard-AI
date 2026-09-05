@@ -25,7 +25,7 @@ class FactLedger(Base):
     transaction_date = Column(DateTime(timezone=True))
     
     amount = Column(Numeric(precision=15, scale=2))
-    currency = Column(String, default="INR", index=True)
+    currency = Column(String, default="USD", index=True)
     direction = Column(String) # 'CREDIT' or 'DEBIT'
     
     type = Column(String) # 'GROSS_PAYMENT', 'FEE_DEDUCTION', 'TAX_DEDUCTION', 'BANK_CREDIT', etc.

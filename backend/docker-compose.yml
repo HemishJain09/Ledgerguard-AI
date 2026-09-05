@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   db:
     image: postgres:15-alpine
     container_name: ledger_guard_postgres
@@ -17,6 +18,24 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # FastAPI Backend
+  backend:
+    build: .
+    container_name: ledger_guard_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://ledgerguard:securepassword@db:5432/ledgerguard
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./server.py:/app/server.py
+      - ./config.yaml:/app/config.yaml
 
 volumes:
   pgdata:

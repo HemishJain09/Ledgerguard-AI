@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ledger_guard_postgres
+    environment:
+      POSTGRES_USER: ledgerguard
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: ledgerguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgerguard -d ledgerguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

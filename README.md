@@ -4,10 +4,95 @@ LedgerGuard AI is an autonomous financial reconciliation engine designed to auto
 
 When discrepancies occur (such as missing transactions, orphaned events, or data quality errors), LedgerGuard AI utilizes a built-in AI Investigator powered by Gemini 2.5 Flash to automatically dissect the financial graph, propose an economic hypothesis for the anomaly, and present it to human operators in a streamlined "Forensic Queue" for one-click manual resolution.
 
-## Features
+## Architecture & Pipeline Blocks
 
-- **Multi-Layer Auto-Reconciliation**: A pipelined matching engine that performs strict 1:1 hashing, date-windowed fast-tracking, and a Mixed-Integer Linear Programming (MILP) solver to mathematically guarantee subset sum matches across disjoint sets.
-- **AI Forensic Investigator**: Automatically triages mathematical anomalies using a Program-of-Thought (PoT) DSL, identifying missing records, unexpected fees, or timing differences using a 2 million token LLM context window.
+LedgerGuard AI is composed of 5 distinct orchestration blocks that run sequentially to guarantee data integrity and deterministic outcomes.
+
+### Block 1: Data Ingestion & Extraction
+Responsible for extracting raw, messy financial data and normalizing it into a strict canonical format using deterministic math assertions and LLM schema discovery.
+
+```mermaid
+graph TD
+    A([Raw Files: CSV / PDF / XLSX]) --> B[1. File & Row Extraction<br>Polars / pdfplumber]
+    B --> C{2. Hash Validation<br>SHA-256 Check}
+    C -- Hash Exists --> D[Drop Duplicate<br>Idempotency]
+    C -- New Hash --> E[3. LLM Schema Discovery<br>Gemini 2.5 Flash]
+    E -. Logs Trace To .-> F[LangSmith Observability<br>Trace Logging]
+    E -- Outputs Pydantic Mapping --> G{4. Invariant Probes<br>Python Math Assertions}
+    G -- Probes FAIL --> H[5. Human-in-the-Loop<br>LangGraph Routing & React UI]
+    H -- Human Corrects Schema --> G
+    G -- Probes PASS --> I[6. Data Normalization<br>Decimal / ISO-8601 Cast]
+    I --> J[(Fact Ledger DB<br>CanonicalRecord)]
+```
+
+### Block 2: Candidate Generation Funnel
+Responsible for shrinking the massive search space. It creates small, high-probability bipartite graphs between candidate source events and target deposit events.
+
+```mermaid
+graph TD
+    A[(Fact Ledger DB)] --> B[Financial Event Builder<br>Map Facts to Events]
+    B --> C[Job & Policy Scope<br>Define Batch Limits]
+    C --> D{Candidate Generation Funnel}
+    D --> E[1. Merchant & Currency Partition]
+    E --> F[2. Temporal Window Pruning]
+    F --> G[3. Token & Amount Evidence]
+    G --> H[Multi-Signal Resolution<br>Create Edges]
+```
+
+### Block 3: Mathematical MILP Solver
+Executes Mixed-Integer Linear Programming against the candidate graphs to mathematically prove 1:1, 1:N, or N:M matches without hallucination.
+
+```mermaid
+graph TD
+    A([Candidate Graph from Block 2<br>e.g., 72 Candidates]) --> B[1. Mathematical Formulation<br>Formulate Objective & Constraints]
+    B --> C[2. MILP Solver Execution<br>Google OR-Tools / SciPy]
+    C -- Success --> D[3. Deterministic Proof & Ambiguity Check<br>Evaluate Uniqueness]
+    C -- Break/Discrepancy --> E[Route to AI Investigator<br>Block 4]
+    C -- Timeout/Unproven --> F[Emit ABSTAIN]
+    D --> G{Multiple Equivalent Subsets?}
+    G -- Unique --> H[4. Transactional Allocation<br>Commit Atomic Allocation]
+    G -- Ambiguous --> I[Route to HUMAN_REVIEW]
+    H --> J[(Allocation Ledger DB)]
+    H --> K([Proven Allocation Graph<br>Ready for Block 5])
+```
+
+### Block 4: AI Investigator
+An autonomous Agent (Gemini 2.5 Flash) that analyzes unresolved solver cases, hypothesizes economic anomalies (like missing fees or orphaned records), and writes a deterministic Program-of-Thought DSL to prove its hypothesis.
+
+```mermaid
+graph TD
+    A([Unresolved Solver Case<br>from Block 3]) --> B[1. Evidence Retrieval<br>Dynamic Bundle Assembly]
+    B --> C[2. AI Investigator Agent<br>Gemini 2.5 Flash]
+    C --> D{3. Generates Structured Output<br>Hypothesis & DSL Program}
+    D --> E[4. Deterministic PoT Executor<br>Python Dispatch Loop]
+    E --> F{5. Math Verification<br>Does Result = Target?}
+    F -- False --> G[Route to ESCALATE / REVIEW<br>Verification Failed]
+    F -- True --> H([Proven AI Case<br>Ready for Block 5 Verifier])
+```
+
+### Block 5: The Deterministic Verifier
+The final safety checkpoint. It accepts proposed matches from the MILP Solver or the AI Investigator, strips away their reasoning, and verifies provenance, source authority, and completeness from scratch.
+
+```mermaid
+graph TD
+    A([Proposed Solution<br>from Block 3 or 4]) --> B[The Deterministic Verifier]
+    B --> C{1. Provenance & Validity<br>Are facts real & active?}
+    C -- Pass --> D{2. Source Authority<br>Who owns the truth?}
+    D -- Pass --> E{3. Completeness Check<br>Is Residual = 0?}
+    C -- Fail --> F[ESCALATE<br>Contradiction/Break]
+    D -- Contradiction --> F
+    E -- Pass --> G[Decision Engine]
+    G --> H{Route Case Status}
+    H --> I[AUTO_RESOLVE]
+    H --> J[REVIEW]
+    H --> K[ABSTAIN]
+    E -- Break Remains --> F
+    I --> L[(Decision Record DB)]
+    J --> L
+    K --> L
+    F --> L
+    L --> M([Exception Dashboard<br>Human Workflow])
+```
 - **Interactive Forensic Queue**: A beautiful, dynamic React dashboard to visualize orphaned clusters side-by-side, view the AI's hypothesis, and securely push manual adjustments and force-matches to the immutable ledger.
 - **Real-Time Insights**: A live dashboard displaying auto-match rates, total reconciled volume, and trailing 7-day trend analysis.
 
